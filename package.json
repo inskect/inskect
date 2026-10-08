@@ -1,0 +1,37 @@
+{
+  "name": "inskect",
+  "version": "0.0.0",
+  "private": true,
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "lint": "eslint .",
+    "typecheck": "nuxt typecheck",
+    "test": "vitest run",
+    "screenshots": "node scripts/screenshots.mjs",
+    "setup": "node scripts/setup.mjs"
+  },
+  "dependencies": {
+    "@iconify-json/lucide": "^1.2.139",
+    "@nuxt/fonts": "^0.14.0",
+    "@nuxt/ui": "^4.11.3",
+    "nuxt": "^4.5.2"
+  },
+  "devDependencies": {
+    "@clack/prompts": "^1.8.1",
+    "@iconify-json/simple-icons": "^1.2.98",
+    "@nuxt/eslint": "^1.17.0",
+    "@types/node": "^26.6.4",
+    "eslint": "^10.12.0",
+    "playwright": "1.63.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.3",
+    "vue-tsc": "^3.3.12"
+  },
+  "packageManager": "pnpm@11.20.0"
+}

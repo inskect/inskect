@@ -1,0 +1,253 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+/*
+ * "Inspection report": every scan reads as a numbered report. Paper and ink, thin rules and square
+ * corners, one brand colour (inspection blue, the ink of an administrative stamp) and the severity
+ * colours, kept for risk alone. Barlow Condensed labels and stamps, IBM Plex Sans for reading,
+ * IBM Plex Mono for evidence. Every colour has a dark-mode twin: the same report, in negative.
+ */
+
+@theme static {
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --font-display: "Barlow Condensed", "IBM Plex Sans", ui-sans-serif, sans-serif;
+
+  /* Paper to ink: 100 is the page, 300 a rule, 950 the ink. */
+  --color-graphite-50: #F7F7F3;
+  --color-graphite-100: #EEEEE9;
+  --color-graphite-200: #E4E4DD;
+  --color-graphite-300: #D4D4CC;
+  --color-graphite-400: #9EA2AC;
+  --color-graphite-500: #6B707C;
+  --color-graphite-600: #5A5F6B;
+  --color-graphite-700: #3B3F4A;
+  --color-graphite-800: #262A34;
+  --color-graphite-900: #1B1F29;
+  --color-graphite-950: #14171F;
+
+  /* Inspection blue: 600 is the brand, the stamp's ink. */
+  --color-insp-50: #EEF1FD;
+  --color-insp-100: #DCE2FB;
+  --color-insp-200: #B9C5F6;
+  --color-insp-300: #8A9DF0;
+  --color-insp-400: #5B73E3;
+  --color-insp-500: #3550CF;
+  --color-insp-600: #1F3BB3;
+  --color-insp-700: #182E8F;
+  --color-insp-800: #13246F;
+  --color-insp-900: #0F1C55;
+  --color-insp-950: #0A1238;
+
+  --animate-scan: scan 2.4s ease-in-out infinite;
+
+  @keyframes scan {
+    0%, 100% { transform: translateY(-100%); opacity: 0; }
+    15%, 85% { opacity: 1; }
+    50% { transform: translateY(100%); }
+  }
+
+  /* A progress bar that doesn't know how far along it is: a segment sweeping across. */
+  --animate-sweep: sweep 1.1s ease-in-out infinite;
+
+  @keyframes sweep {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(300%); }
+  }
+}
+
+/*
+ * Severity and verdict colours, switched per theme below. The bare name fills bars and dots,
+ * `-ink` is text, `-tint` a background and `-line` a border on that background.
+ */
+@theme inline {
+  --color-critical: var(--sev-critical);
+  --color-critical-ink: var(--sev-critical-ink);
+  --color-critical-tint: var(--sev-critical-tint);
+  --color-critical-line: var(--sev-critical-line);
+  --color-high: var(--sev-high);
+  --color-high-ink: var(--sev-high-ink);
+  --color-high-tint: var(--sev-high-tint);
+  --color-high-line: var(--sev-high-line);
+  --color-medium: var(--sev-medium);
+  --color-medium-ink: var(--sev-medium-ink);
+  --color-medium-tint: var(--sev-medium-tint);
+  --color-medium-line: var(--sev-medium-line);
+  --color-low: var(--sev-low);
+  --color-low-ink: var(--sev-low-ink);
+  --color-low-tint: var(--sev-low-tint);
+  --color-low-line: var(--sev-low-line);
+  --color-safe: var(--sev-safe);
+  --color-safe-ink: var(--sev-safe-ink);
+  --color-safe-tint: var(--sev-safe-tint);
+  --color-safe-line: var(--sev-safe-line);
+  --color-ground: var(--app-ground);
+  --color-code: var(--app-code);
+  --color-brand: var(--color-insp-600);
+  --color-brand-ink: var(--app-brand-ink);
+}
+
+:root {
+  --ui-radius: 0;
+  --ui-header-height: 4rem;
+
+  /* Nuxt UI's default 500 shades are too light for text on white. */
+  --ui-primary: var(--ui-color-primary-600);
+  --ui-success: var(--ui-color-success-700);
+  --ui-warning: var(--ui-color-warning-700);
+  --ui-error: var(--ui-color-error-700);
+
+  /* The paper the sheets sit on, and the ink code is set on. */
+  --app-ground: var(--color-graphite-100);
+  --app-code: var(--color-graphite-950);
+  /* Inspection blue as text: 8:1 on white. */
+  --app-brand-ink: var(--color-insp-600);
+
+  --ui-bg: #fff;
+  --ui-bg-muted: var(--color-graphite-50);
+  --ui-bg-elevated: var(--color-graphite-100);
+  --ui-bg-accented: var(--color-graphite-200);
+  --ui-bg-inverted: var(--color-graphite-950);
+  --ui-border: var(--color-graphite-300);
+  --ui-border-muted: var(--color-graphite-200);
+  --ui-border-accented: var(--color-graphite-400);
+  --ui-border-inverted: var(--color-graphite-950);
+  --ui-text-dimmed: var(--color-graphite-500);
+  --ui-text-muted: var(--color-graphite-600);
+  --ui-text-toned: var(--color-graphite-700);
+  --ui-text: var(--color-graphite-800);
+  --ui-text-highlighted: var(--color-graphite-950);
+  --ui-text-inverted: #fff;
+
+  --sev-critical: #B3261E;
+  --sev-critical-ink: #9B1D16;
+  --sev-critical-tint: #FBEAE8;
+  --sev-critical-line: #F0C3BE;
+  --sev-high: #D9541C;
+  --sev-high-ink: #A63A0B;
+  --sev-high-tint: #FDEEE6;
+  --sev-high-line: #F5C7AE;
+  --sev-medium: #E0A800;
+  --sev-medium-ink: #7A5A00;
+  --sev-medium-tint: #FFF6D6;
+  --sev-medium-line: #EED78A;
+  --sev-low: #7A8091;
+  --sev-low-ink: #4A5060;
+  --sev-low-tint: #EFF0F3;
+  --sev-low-line: #D3D6DE;
+  --sev-safe: #1E7A3C;
+  --sev-safe-ink: #18652F;
+  --sev-safe-tint: #E7F4EB;
+  --sev-safe-line: #B8DCC3;
+}
+
+.dark {
+  --ui-primary: var(--ui-color-primary-300);
+  --ui-success: var(--ui-color-success-400);
+  --ui-warning: var(--ui-color-warning-400);
+  --ui-error: var(--ui-color-error-400);
+
+  /* The same report in negative: ink paper, lighter sheets, the blue lifted to stay readable. */
+  --app-ground: #0E1016;
+  --app-code: #0A0C11;
+  --app-brand-ink: var(--color-insp-300);
+
+  --ui-bg: #171A22;
+  --ui-bg-muted: #12141B;
+  --ui-bg-elevated: #1E222C;
+  --ui-bg-accented: #282D39;
+  --ui-bg-inverted: var(--color-graphite-100);
+  --ui-border: #2C313D;
+  --ui-border-muted: #222631;
+  --ui-border-accented: #444B5A;
+  --ui-border-inverted: var(--color-graphite-100);
+  --ui-text-dimmed: #8A90A0;
+  --ui-text-muted: #A4AAB8;
+  --ui-text-toned: #C9CDD6;
+  --ui-text: #DDE0E7;
+  --ui-text-highlighted: #F4F4F0;
+  --ui-text-inverted: var(--color-graphite-950);
+
+  --sev-critical: #F06A5F;
+  --sev-critical-ink: #FF9C93;
+  --sev-critical-tint: #2A1210;
+  --sev-critical-line: #5A221D;
+  --sev-high: #F08A4B;
+  --sev-high-ink: #FFB385;
+  --sev-high-tint: #2A170B;
+  --sev-high-line: #5E3216;
+  --sev-medium: #F5C84B;
+  --sev-medium-ink: #FFDB7A;
+  --sev-medium-tint: #2A2208;
+  --sev-medium-line: #5A4712;
+  --sev-low: #9AA0AE;
+  --sev-low-ink: #BCC1CC;
+  --sev-low-tint: #1A1D24;
+  --sev-low-line: #343946;
+  --sev-safe: #4CB572;
+  --sev-safe-ink: #7FD49C;
+  --sev-safe-tint: #0E2015;
+  --sev-safe-line: #1F4A2D;
+}
+
+body {
+  background-color: var(--app-ground);
+}
+
+/* A form's field label: small, tracked capitals. */
+@utility eyebrow {
+  font-family: var(--font-sans);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* Titles, set like a printed label: condensed capitals. */
+@utility display {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 0.95;
+  text-transform: uppercase;
+}
+
+/* The sheets a report is printed on: square corners, a hairline edge, no shadow. */
+@utility surface {
+  background-color: var(--ui-bg);
+  border: 1px solid var(--ui-border);
+  border-radius: 0;
+}
+
+/* A titled sheet, as in an inspector's file: a surface under a heavier ink rule. */
+@utility sheet {
+  background-color: var(--ui-bg);
+  border: 1px solid var(--ui-border);
+  border-top: 2px solid var(--ui-border-inverted);
+  border-radius: 0;
+}
+
+/* A sheet's title, in the condensed capitals of the report's headings. */
+@utility sheet-title {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+/* A verdict stamp, in the colour it's given: a double ink frame around condensed capitals. */
+@utility stamp {
+  display: inline-block;
+  border: 3px solid currentColor;
+  outline: 1.5px solid currentColor;
+  outline-offset: 3px;
+  padding: 0.05em 0.55em;
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}

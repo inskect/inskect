@@ -1,0 +1,207 @@
+name: Release
+
+# A signed tag on main releases its commit (CONTRIBUTING.md#releases):
+# - vX.Y.Z: images tagged X.Y.Z, X.Y, X and latest, a GitHub Release marked Latest, and the major
+#   tag vX moved to it for the GitHub Action. On a commit that already has a vX.Y.Z-rc.N tag, the
+#   release candidate's images are re-tagged, not rebuilt: what was tested is what ships.
+# - vX.Y.Z-alpha.N, -beta.N or -rc.N: images tagged with that version and beta, and a GitHub
+#   Release marked Pre-release. latest, X, X.Y and vX don't move.
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-*"
+
+permissions:
+  contents: read
+
+# One release at a time per tag; never cancelled halfway through publishing.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # The tagged commit passes CI before anything is published.
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.plan.outputs.version }}
+      major: ${{ steps.plan.outputs.major }}
+      prerelease: ${{ steps.plan.outputs.prerelease }}
+      image-tags: ${{ steps.plan.outputs.image-tags }}
+      promote-from: ${{ steps.plan.outputs.promote-from }}
+      previous-tag: ${{ steps.plan.outputs.previous-tag }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - id: plan
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::$TAG isn't on main: tag a commit of main"
+            exit 1
+          fi
+          version="${TAG#v}"
+          major="${version%%.*}"
+          if [[ "$version" == *-* ]]; then
+            prerelease=true
+            image_tags="$version beta"
+            # A pre-release's notes cover what changed since the previous tag of any kind.
+            previous=$(git describe --tags --abbrev=0 --match 'v[0-9]*.[0-9]*.[0-9]*' "$GITHUB_SHA^" 2>/dev/null || true)
+            promote=""
+          else
+            prerelease=false
+            core="${version%.*}"
+            image_tags="$version $core $major latest"
+            # A stable release's notes cover everything since the previous stable one.
+            previous=$(git describe --tags --abbrev=0 --match 'v[0-9]*.[0-9]*.[0-9]*' --exclude '*-*' "$GITHUB_SHA^" 2>/dev/null || true)
+            # The newest release candidate of this version on this very commit, if there's one.
+            promote=$(git tag --points-at "$GITHUB_SHA" --list "v$version-rc.*" | sort -V | tail -n 1)
+          fi
+          {
+            echo "version=$version"
+            echo "major=$major"
+            echo "prerelease=$prerelease"
+            echo "image-tags=$image_tags"
+            echo "promote-from=${promote#v}"
+            echo "previous-tag=$previous"
+          } >> "$GITHUB_OUTPUT"
+          echo "Releasing $version (pre-release: $prerelease), images tagged: $image_tags${promote:+, promoted from $promote}"
+
+  images:
+    needs: [ci, plan]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - component: api
+            context: ./backend
+          - component: web
+            context: .
+    env:
+      VERSION: ${{ needs.plan.outputs.version }}
+      IMAGE_TAGS: ${{ needs.plan.outputs.image-tags }}
+      PROMOTE_FROM: ${{ needs.plan.outputs.promote-from }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - id: image
+        run: |
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          image="ghcr.io/$owner/inskect-${{ matrix.component }}"
+          echo "name=$image" >> "$GITHUB_OUTPUT"
+          {
+            echo "tags<<EOF"
+            for tag in $IMAGE_TAGS; do echo "$image:$tag"; done
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      # Build once, promote: the release candidate's images, when they were published.
+      - id: promote
+        if: env.PROMOTE_FROM != ''
+        env:
+          IMAGE: ${{ steps.image.outputs.name }}
+        run: |
+          if docker buildx imagetools inspect "$IMAGE:$PROMOTE_FROM" > /dev/null 2>&1; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::$IMAGE:$PROMOTE_FROM isn't published: building $VERSION instead"
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+      - if: steps.promote.outputs.found == 'true'
+        env:
+          IMAGE: ${{ steps.image.outputs.name }}
+        run: |
+          set -euo pipefail
+          args=()
+          for tag in $IMAGE_TAGS; do args+=(--tag "$IMAGE:$tag"); done
+          docker buildx imagetools create "${args[@]}" "$IMAGE:$PROMOTE_FROM"
+          digest() { docker buildx imagetools inspect "$1" --format '{{json .Manifest.Digest}}'; }
+          expected=$(digest "$IMAGE:$PROMOTE_FROM")
+          for tag in $IMAGE_TAGS; do
+            actual=$(digest "$IMAGE:$tag")
+            if [ "$actual" != "$expected" ]; then
+              echo "::error::$IMAGE:$tag is $actual, not the release candidate's $expected"
+              exit 1
+            fi
+          done
+          echo "$IMAGE: $IMAGE_TAGS re-tagged from $PROMOTE_FROM ($expected)"
+
+      - if: steps.promote.outputs.found != 'true'
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: ${{ matrix.context }}
+          target: production
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.image.outputs.tags }}
+          # The API reports its version (backend/Dockerfile); the web image has none to stamp.
+          build-args: ${{ matrix.component == 'api' && format('VERSION={0}', env.VERSION) || '' }}
+          labels: |
+            org.opencontainers.image.title=inskect-${{ matrix.component }}
+            org.opencontainers.image.version=${{ env.VERSION }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.licenses=AGPL-3.0-only
+          cache-from: type=gha,scope=${{ matrix.component }}
+
+  release:
+    needs: [plan, images]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ github.ref_name }}
+      VERSION: ${{ needs.plan.outputs.version }}
+      MAJOR: ${{ needs.plan.outputs.major }}
+      PRERELEASE: ${{ needs.plan.outputs.prerelease }}
+      PREVIOUS: ${{ needs.plan.outputs.previous-tag }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      # From the previous release to this tag; the whole history for the first release.
+      - id: range
+        run: echo "range=${PREVIOUS:+$PREVIOUS..$TAG}" >> "$GITHUB_OUTPUT"
+      - uses: orhun/git-cliff-action@a9a95522b26fe6403f7bb24031f21fb573d0f5ff # v4.9.1
+        with:
+          config: cliff.toml
+          args: --strip all ${{ steps.range.outputs.range }}
+        env:
+          OUTPUT: notes.md
+          # A stable release's notes are one list: its release candidates' commits fold into it.
+          GIT_CLIFF__GIT__IGNORE_TAGS: ${{ needs.plan.outputs.prerelease == 'false' && 'v[0-9]+\.[0-9]+\.[0-9]+-.*' || '' }}
+      - run: |
+          set -euo pipefail
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          {
+            echo
+            echo "### Images"
+            echo
+            echo "- \`ghcr.io/$owner/inskect-api:$VERSION\`"
+            echo "- \`ghcr.io/$owner/inskect-web:$VERSION\`"
+          } >> notes.md
+          if [ "$PRERELEASE" = true ]; then
+            gh release create "$TAG" --verify-tag --title "$TAG" --notes-file notes.md --prerelease --latest=false
+          else
+            gh release create "$TAG" --verify-tag --title "$TAG" --notes-file notes.md --latest
+            # The GitHub Action is used as owner/repo@vX: move it to this release.
+            git tag --force "v$MAJOR" "$GITHUB_SHA"
+            git push --force origin "refs/tags/v$MAJOR"
+          fi

@@ -1,0 +1,10 @@
+.venv
+__pycache__
+*.pyc
+.env
+.env.local
+.ruff_cache
+.pytest_cache
+tests
+# A local run's database and uploads.
+data

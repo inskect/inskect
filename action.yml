@@ -1,0 +1,79 @@
+name: Inskect scan
+description: Scan the agent skills a pull request changes on your Inskect server, comment with the verdicts, and upload the findings to code scanning.
+author: maelbel
+branding:
+  icon: shield
+  color: green
+
+inputs:
+  server-url:
+    description: Your Inskect server, e.g. https://inskect.example.com
+    required: true
+  token:
+    description: A personal API token from the server's Account page (sst_…). Not needed on a server without accounts.
+    required: false
+    default: ""
+  paths:
+    description: Folders that hold skills, from the repository's root, one per line or comma-separated. A skill is a folder with a SKILL.md.
+    required: false
+    default: "."
+  fail-on:
+    description: "Fail on this verdict: do-not-install, caution (Review before installing, or worse) or never."
+    required: false
+    default: do-not-install
+  max-risk-score:
+    description: Also fail when a skill's risk score (0–100) is above this. Empty to ignore the score.
+    required: false
+    default: ""
+  comment:
+    description: "Comment on the pull request with each skill's verdict and a link to its report: true (once a skill is scanned), always (also when the pull request changes no skill) or false."
+    required: false
+    default: "true"
+  sarif:
+    description: Upload the findings to GitHub code scanning (needs security-events write).
+    required: false
+    default: "true"
+  timeout-minutes:
+    description: How long to wait for all the scans to finish.
+    required: false
+    default: "20"
+  github-token:
+    description: The token to list changed files and comment with.
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  scanned:
+    description: How many skills were scanned.
+    value: ${{ steps.scan.outputs.scanned }}
+  failed:
+    description: How many skills failed the check.
+    value: ${{ steps.scan.outputs.failed }}
+  results:
+    description: Each skill's result as JSON, with its recommendation, risk score, finding count and report link.
+    value: ${{ steps.scan.outputs.results }}
+  sarif-file:
+    description: The SARIF file written, with a run per skill.
+    value: ${{ steps.scan.outputs.sarif-file }}
+
+runs:
+  using: composite
+  steps:
+    - id: scan
+      shell: bash
+      run: node "$GITHUB_ACTION_PATH/action/main.mjs"
+      env:
+        INPUT_SERVER_URL: ${{ inputs.server-url }}
+        INPUT_TOKEN: ${{ inputs.token }}
+        INPUT_PATHS: ${{ inputs.paths }}
+        INPUT_FAIL_ON: ${{ inputs.fail-on }}
+        INPUT_MAX_RISK_SCORE: ${{ inputs.max-risk-score }}
+        INPUT_COMMENT: ${{ inputs.comment }}
+        INPUT_SARIF: ${{ inputs.sarif }}
+        INPUT_TIMEOUT_MINUTES: ${{ inputs.timeout-minutes }}
+        INPUT_GITHUB_TOKEN: ${{ inputs.github-token }}
+    # Uploaded whether or not the check failed: the failing findings are the ones to see.
+    - if: ${{ !cancelled() && inputs.sarif == 'true' && steps.scan.outputs.sarif-file != '' }}
+      uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+      with:
+        sarif_file: ${{ steps.scan.outputs.sarif-file }}

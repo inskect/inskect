@@ -1,0 +1,134 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  # The release workflow runs it on the tagged commit before publishing.
+  workflow_call:
+
+# Reading the code is all any job needs.
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    # A hung test fails the job, with its log, rather than holding it for 6 hours.
+    timeout-minutes: 15
+    # Every storage test runs on SQLite and, through TEST_DATABASE_URL, on Postgres.
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: inskect_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql://postgres:test@localhost:5432/inskect_test
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: "0.12.9"
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - run: uv sync
+      # Known vulnerabilities in the production dependencies fail the build. uv audit has no severity
+      # filter: an advisory that can't be fixed yet is ignored with --ignore-until-fixed.
+      - run: uv audit --no-dev --frozen
+      - run: uv run ruff check .
+      # In a random order, so no test leans on another having run first; the seed is in the log
+      # (`--random-order-seed=<seed>` replays it). On every core (pytest-xdist): each worker has a
+      # Postgres database of its own (tests/conftest.py).
+      - run: uv run pytest --random-order -n auto
+      - run: uv run python -c "from app.main import app"
+      # Every production dependency's license must be one the AGPL-3.0 can include. Last: it drops the
+      # dev dependencies from the environment.
+      - run: uv run --no-dev python ../scripts/check-python-licenses.py
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # High and critical advisories in the production dependencies fail the build; ones with no fix
+      # yet are listed, with why, in pnpm-workspace.yaml's auditConfig.
+      - run: pnpm audit --prod --audit-level high
+      # Every production dependency's license must be one the AGPL-3.0 can include. vaul-vue's
+      # metadata names none: it's MIT in its repository (THIRD_PARTY_NOTICES.md).
+      - name: Check the dependencies' licenses
+        run: >-
+          pnpm dlx license-checker-rseidelsohn@5.0.1 --production --summary
+          --onlyAllow "MIT;Apache-2.0;ISC;BSD-2-Clause;BSD-3-Clause;BlueOak-1.0.0;0BSD;CC0-1.0;MPL-2.0;CC-BY-4.0"
+          --excludePackagesStartingWith "inskect@;vaul-vue@"
+      - run: pnpm run lint
+      - run: pnpm run typecheck
+      - run: pnpm run test
+      - run: pnpm run build
+
+  # Secrets in any commit of the branch: gitleaks' rules, minus the tests' fake keys (.gitleaks.toml).
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Scan the history for secrets
+        run: >-
+          docker run --rm -v "$PWD:/repo"
+          ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f
+          git /repo --config /repo/.gitleaks.toml --redact --no-banner
+
+  # What this repository mustn't mention: another deployment's platform or private code, or the
+  # product's former name (scripts/check-references.sh).
+  references:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: scripts/check-references.sh
+
+  # The README's install, from a fresh checkout: production images with Docker Compose, nothing set
+  # but backend/.env.example, then a scan of an uploaded skill (scripts/smoke-test.sh).
+  self-hosted:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: scripts/smoke-test.sh
+
+  docker:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - component: api
+            context: ./backend
+          - component: web
+            context: .
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: ${{ matrix.context }}
+          target: production
+          push: false
+          # Layers kept between runs, so a pull request that changes no dependency reuses the
+          # installed Claude CLI, Python packages and node_modules.
+          cache-from: type=gha,scope=${{ matrix.component }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.component }}

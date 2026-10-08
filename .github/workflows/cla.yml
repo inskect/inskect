@@ -1,0 +1,44 @@
+name: CLA
+
+# Every author of a pull request's commits signs the contributor license agreement (CLA.md), once
+# (scripts/cla.mjs). The "CLA" status stays failing until they have.
+on:
+  # Not pull_request: a fork's pull request gets no write access there. This runs the base
+  # branch's own code, and never checks out or runs the pull request's.
+  pull_request_target:
+    types: [opened, reopened, synchronize]
+  # A signature, or "recheck" once a commit's email is linked to an account.
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write # the signatures, on the cla-signatures branch
+  pull-requests: write
+  issues: write
+  statuses: write
+
+# One at a time, so two signatures never write signatures.json at once.
+concurrency:
+  group: cla
+  cancel-in-progress: false
+
+jobs:
+  cla:
+    if: >-
+      github.event_name == 'pull_request_target' ||
+      (github.event.issue.pull_request && (github.event.comment.body == 'recheck' || contains(github.event.comment.body, 'CLA')))
+    runs-on: ubuntu-latest
+    steps:
+      # The base branch: the default for both events.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          # Who never signs: the maintainer. Bots ([bot] accounts) are exempt too.
+          CLA_ALLOWLIST: maelbel
+        with:
+          script: |
+            const { default: run } = await import('${{ github.workspace }}/scripts/cla.mjs')
+            const allowlist = process.env.CLA_ALLOWLIST.split(',').map(login => login.trim()).filter(Boolean)
+            await run({ github, context, core, allowlist })

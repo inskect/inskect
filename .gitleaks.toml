@@ -1,0 +1,10 @@
+# gitleaks (CI's secrets job): its default rules, minus the fake keys the tests use on purpose.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Fake keys in the tests"
+regexTarget = "secret"
+regexes = ['''^sk-one-off-key''']
+paths = ['''^backend/tests/''', '''^test/''']
+condition = "AND"

@@ -1,0 +1,54 @@
+# The development stack: dev servers with hot reload, the checkout bind-mounted into both.
+#
+#   docker compose -f docker-compose.dev.yml up --build
+#
+# To run Inskect, use docker-compose.yml.
+name: inskect
+services:
+  api:
+    container_name: inskect-api
+    build:
+      context: ./backend
+      target: development
+    restart: unless-stopped
+    env_file:
+      - path: ./backend/.env.local
+        required: false
+    volumes:
+      - ./backend:/app
+      - claude_cli_auth:/root
+    tty: true
+    networks:
+      - internal
+
+  web:
+    container_name: inskect-web
+    build:
+      context: .
+      target: development
+    restart: unless-stopped
+    user: node
+    environment:
+      NODE_ENV: development
+      NUXT_API_BASE: http://api:8000
+      # nuxt dev outgrows 512 MB after a few minutes of reloads, and aborts.
+      NODE_OPTIONS: "--max-old-space-size=1536"
+    # An abort would otherwise dump several GB of core into the bind-mounted checkout.
+    ulimits:
+      core: 0
+    ports:
+      - "3005:3000"
+    volumes:
+      - ./:/app
+    tty: true
+    depends_on:
+      - api
+    networks:
+      - internal
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  claude_cli_auth:

@@ -1,0 +1,36 @@
+# A release's notes (git-cliff): what changed since the previous release, grouped by the
+# conventional commit prefixes (CONTRIBUTING.md). The release workflow passes the range: from the
+# previous stable tag for a stable release, from the previous tag of any kind for a pre-release.
+# To see what the next release would say: git cliff --unreleased --strip all
+
+[changelog]
+header = ""
+body = """
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group | striptags | trim }}
+{% for commit in commits %}
+- {% if commit.scope and commit.scope != "deps" %}**{{ commit.scope }}:** {% endif %}{{ commit.message | upper_first }}
+{%- endfor %}
+{% endfor %}
+"""
+footer = ""
+trim = true
+
+[git]
+conventional_commits = true
+filter_unconventional = true
+commit_parsers = [
+  # A breaking change (type!: …) first, whatever its type.
+  { message = "^[a-z]+(\\([^)]*\\))?!:", group = "<!-- 0 -->Breaking changes" },
+  # Dependency updates under any prefix (Dependabot's are build(deps)).
+  { message = "^[a-z]+\\(deps\\)", group = "<!-- 4 -->Dependencies" },
+  { message = "^feat", group = "<!-- 1 -->Features" },
+  { message = "^fix", group = "<!-- 2 -->Bug fixes" },
+  { message = "^perf", group = "<!-- 3 -->Performance" },
+  { message = "^docs", group = "<!-- 5 -->Documentation" },
+  # chore, refactor, test, ci, build and style change nothing a user notices.
+  { message = ".*", skip = true },
+]
+# Release tags only: not the major tag (v1) the GitHub Action is used by.
+tag_pattern = "^v[0-9]+\\.[0-9]+\\.[0-9]+"
+sort_commits = "oldest"

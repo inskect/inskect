@@ -1,0 +1,11 @@
+node_modules
+.nuxt
+.output
+.git
+backend
+.env
+.env.local
+# Not part of the build: leaving them out keeps a docs or CI change from rebuilding the app.
+docs
+.github
+test

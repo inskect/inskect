@@ -1,0 +1,93 @@
+# Inskect, self-hosted: `docker compose up -d`, then open http://localhost:3005.
+#
+# It runs the published images (ghcr.io/inskect/inskect-api and inskect-web), on the latest 1.x
+# release unless INSKECT_IMAGE_TAG names another (a version such as 1.2.0, or 1.2). Without
+# them, or with `--build`, it builds the same images from this checkout instead.
+#
+# Settings go in backend/.env.local (`pnpm setup` writes it; see backend/.env.example). Add
+# reverse-proxy settings in docker-compose.override.yml, which Compose merges on top of this file
+# (docs/REVERSE_PROXY.md). The development stack is docker-compose.dev.yml.
+name: inskect
+
+x-api-image: &api-image
+  image: ghcr.io/inskect/inskect-api:${INSKECT_IMAGE_TAG:-1}
+  build:
+    context: ./backend
+    target: production
+
+services:
+  # Hands the volumes to the API's user (10001) before it starts: installs from before it ran as
+  # root have them owned by root. Nothing to do on later starts. It only gets to change ownership.
+  api-init:
+    <<: *api-image
+    user: root
+    entrypoint: ["sh", "-c", "chown -R 10001:10001 /app/data /home/app"]
+    cap_drop: [ALL]
+    cap_add: [CHOWN, DAC_READ_SEARCH, FOWNER]
+    security_opt: [no-new-privileges:true]
+    network_mode: none
+    volumes:
+      - api_data:/app/data
+      - claude_cli_auth:/home/app
+    restart: "no"
+
+  api:
+    <<: *api-image
+    container_name: inskect-api
+    restart: unless-stopped
+    env_file:
+      - path: ./backend/.env.local
+        required: false
+    depends_on:
+      api-init:
+        condition: service_completed_successfully
+    volumes:
+      - api_data:/app/data
+      # The Claude CLI's login, in the API user's home.
+      - claude_cli_auth:/home/app
+    # Inspections fetch and analyse untrusted skills in this process (docs/SECURITY_MODEL.md): no
+    # privileges, nothing writable but its data, its home and a /tmp in memory, and bounds on
+    # memory and processes. An inspection takes in 100 MiB at most; /tmp counts towards the memory
+    # limit. Raise both for more inspections at once.
+    read_only: true
+    tmpfs:
+      - /tmp:size=1g
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 2g
+    pids_limit: 512
+    networks:
+      - internal
+
+  web:
+    image: ghcr.io/inskect/inskect-web:${INSKECT_IMAGE_TAG:-1}
+    build:
+      context: .
+      target: production
+    container_name: inskect-web
+    restart: unless-stopped
+    user: node
+    environment:
+      NODE_ENV: production
+      NUXT_API_BASE: http://api:8000
+    ports:
+      - "3005:3000"
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 512m
+    pids_limit: 256
+    depends_on:
+      - api
+    networks:
+      - internal
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  api_data:
+  claude_cli_auth:

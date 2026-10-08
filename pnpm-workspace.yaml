@@ -1,0 +1,25 @@
+allowBuilds:
+  '@parcel/watcher': false
+  '@tailwindcss/oxide': false
+  esbuild: false
+  unrs-resolver: false
+  vue-demi: false
+auditConfig:
+  # Advisories `pnpm audit --prod` (CI) can't act on yet: no patched release we can install exists.
+  # All reach only the dev server and the build, never the production server (.output holds none of
+  # them). Remove each once a fixed version is out, which Dependabot will propose.
+  ignoreGhsas:
+    # node-forge <=1.4.0, signature verification: used by listhen, `nuxt dev --https`'s certificates.
+    - GHSA-86w9-cpqp-85rv
+    # braces <=3.0.3, stack exhaustion on nested patterns: Nitro's globbing of our own files at build.
+    - GHSA-vfj7-8cjw-p6xm
+    # simple-git <4.0.1, bypasses of its unsafe-operation guard: @nuxt/devtools 3 needs simple-git 3
+    # (it imports a default export 4 dropped), and only runs status, branch and revparse with fixed
+    # arguments, in `nuxt dev`. Fixed by @nuxt/devtools 4, in beta.
+    - GHSA-v5rq-49vh-5v5c
+    - GHSA-x6jw-m9v5-85vh
+    - GHSA-g4wm-2vf7-vfgr
+    - GHSA-858h-whjf-mvg5
+overrides:
+  # GHSA-68fv-2mgg-jv7q, through magicast and postcss: a patch release their ranges don't reach yet.
+  source-map-js: ^1.2.2

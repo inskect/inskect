@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <!-- The Open Graph image (public/og-inskect.png): rendered from this file with Barlow Condensed,
+       IBM Plex Sans and IBM Plex Mono, by scripts/og-image/render.py. -->
+  <rect width="1200" height="630" fill="#EEEEE9"/>
+
+  <!-- The mark and the name, as the report's letterhead. -->
+  <g transform="translate(72 64)">
+    <path d="M18 7h26a3 3 0 0 1 3 3v32a3 3 0 0 1-3 3H18L5 26z" fill="#1F3BB3"/>
+    <circle cx="14" cy="26" r="3.4" fill="#EEEEE9"/>
+    <path d="M22.5 26.5l5.2 5.2 10.4-11.4" fill="none" stroke="#EEEEE9" stroke-width="3.9" stroke-linecap="square"/>
+    <text x="64" y="40" font-family="Barlow Condensed" font-weight="700" font-size="40" letter-spacing="4" fill="#14171F">INSKECT</text>
+  </g>
+  <rect x="72" y="138" width="1056" height="2" fill="#14171F"/>
+
+  <!-- The home page's headline. -->
+  <text font-family="Barlow Condensed" font-weight="700" font-size="104" fill="#14171F">
+    <tspan x="68" y="262">INSPECT A SKILL</tspan>
+    <tspan x="68" y="358">BEFORE IT RUNS.</tspan>
+  </text>
+
+  <text x="72" y="432" font-family="IBM Plex Sans" font-weight="400" font-size="30" fill="#3B3F4A">Prompt injection, data exfiltration and dangerous code, checked</text>
+  <text x="72" y="472" font-family="IBM Plex Sans" font-weight="400" font-size="30" fill="#3B3F4A">before you install, with every finding and its evidence.</text>
+
+  <!-- A verdict stamp, in ink, as on every report. -->
+  <g transform="translate(905 290) rotate(-7)">
+    <rect x="-150" y="-50" width="300" height="100" fill="none" stroke="#B3261E" stroke-width="6"/>
+    <rect x="-160" y="-60" width="320" height="120" fill="none" stroke="#B3261E" stroke-width="2.5"/>
+    <text x="0" y="22" text-anchor="middle" font-family="Barlow Condensed" font-weight="700" font-size="64" letter-spacing="7" fill="#B3261E">REJECTED</text>
+  </g>
+
+  <!-- The report's reference line. -->
+  <rect x="72" y="526" width="4" height="40" fill="#1F3BB3"/>
+  <text x="94" y="554" font-family="IBM Plex Mono Medium" font-weight="500" font-size="22" fill="#5A5F6B">INS-0413 · skills · MCP servers · static analysis + AI review</text>
+
+  <rect y="618" width="1200" height="12" fill="#1F3BB3"/>
+</svg>
