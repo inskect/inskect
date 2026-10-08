@@ -121,6 +121,10 @@ git tag -s v1.2.0 -m v1.2.0   # or v1.2.0-rc.1, -beta.1, -alpha.1 for a pre-rele
 git push origin v1.2.0
 ```
 
+The tag must be signed by a key listed in [`.github/allowed_signers`](./.github/allowed_signers):
+the workflow checks it, and an unsigned tag, a lightweight one or one signed by another key
+publishes nothing. A new maintainer adds their signing key there, in a pull request.
+
 The tag runs [the release workflow](./.github/workflows/release.yml), after CI passes on the
 tagged commit:
 
