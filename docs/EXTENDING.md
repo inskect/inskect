@@ -61,8 +61,17 @@ isolated environment, run it there, and relay its events with `scan_logs.append(
 
 ## Wrapping the API
 
-The API is a FastAPI app, `app.main:app`. Serve your own module instead, which imports it and adds
-to it:
+The API is a FastAPI app, `app.main:app`, in the `inskect-api` package. Install it at a release in
+your own project:
+
+```toml
+dependencies = [
+    "inskect-api @ git+https://github.com/inskect/inskect.git@v1.1.0#subdirectory=backend",
+]
+```
+
+It reports its version as `INSKECT_VERSION`, which the release's images set: set it too. Then serve
+your own module instead, which imports it and adds to it:
 
 ```python
 from app.main import app
@@ -87,9 +96,20 @@ register_rule(Rule("worker_errors", "Scan workers are failing", "Any worker erro
 
 ## Layering the web app
 
-The web app is a Nuxt app, which a [Nuxt layer](https://nuxt.com/docs/getting-started/layers) can
-extend: add pages, components, server routes and plugins, or replace one with a file at the same
-path.
+The web app is a Nuxt app, which another one can extend as a
+[Nuxt layer](https://nuxt.com/docs/getting-started/layers): add pages, components, server routes
+and plugins, or replace one with a file at the same path. Install it at a release, with Nuxt:
+
+```json
+"dependencies": {
+  "inskect": "github:inskect/inskect#v1.1.0",
+  "nuxt": "^4"
+}
+```
+
+then extend it in `nuxt.config.ts`, with `extends: ['inskect']`. Its install script isn't needed:
+with pnpm, deny it in `pnpm-workspace.yaml`'s `allowBuilds` (`inskect: false`).
+`scripts/check-layer.sh` builds such an app, which CI runs on every change.
 
 - **Analytics:** `useAnalytics()` (`app/composables/`) tracks a few events, and does nothing until
   a plugin provides `$track`. `app/utils/analytics.ts` reduces an address to its route's pattern,

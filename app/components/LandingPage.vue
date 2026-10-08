@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Feature } from '~/components/landing/FeatureGrid.vue'
+import type { Feature } from './landing/FeatureGrid.vue'
 
 // The home page for signed-out visitors: what the product does, as this server is set up
 // (session.features), and where to sign up. Its own chunk, without any of the scanner's code.

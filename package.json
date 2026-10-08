@@ -2,6 +2,7 @@
   "name": "inskect",
   "version": "0.0.0",
   "private": true,
+  "main": "./nuxt.config.ts",
   "license": "AGPL-3.0-only",
   "type": "module",
   "scripts": {

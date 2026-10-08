@@ -1,4 +1,4 @@
-import type { AnalyticsEvents } from '~/utils/analytics'
+import type { AnalyticsEvents } from '../utils/analytics'
 
 type Track = <Name extends keyof AnalyticsEvents>(name: Name, data?: AnalyticsEvents[Name]) => void
 

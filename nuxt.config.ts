@@ -1,6 +1,14 @@
+import { existsSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+
+// This app's own files, wherever it's built from: its own checkout, or another app that extends it
+// as a Nuxt layer (docs/EXTENDING.md#layering-the-web-app), where `~` is that app's directory.
+const here = (path: string) => fileURLToPath(new URL(path, import.meta.url))
+
 export default defineNuxtConfig({
   modules: [
-    '@nuxt/eslint',
+    // Linting this repository: a development dependency, which an app extending this one doesn't have.
+    ...(existsSync(here('./node_modules/@nuxt/eslint')) ? ['@nuxt/eslint'] : []),
     '@nuxt/ui',
     '@nuxt/fonts'
   ],
@@ -19,7 +27,7 @@ export default defineNuxtConfig({
     }
   },
 
-  css: ['~/assets/css/main.css'],
+  css: [here('./app/assets/css/main.css')],
 
   runtimeConfig: {
     apiBase: process.env.NUXT_API_BASE || 'http://localhost:8000',
