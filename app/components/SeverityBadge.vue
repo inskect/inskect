@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Severity } from '~~/shared/types/scan'
+import type { Severity } from '../../shared/types/scan'
 
 defineProps<{
   severity: Severity

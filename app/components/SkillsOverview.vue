@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { SkillSummary, UnscannedSkill } from '~~/shared/types/scan'
+import type { SkillSummary, UnscannedSkill } from '../../shared/types/scan'
 
 const props = defineProps<{ skills: SkillSummary[], unscanned: UnscannedSkill[] }>()
 

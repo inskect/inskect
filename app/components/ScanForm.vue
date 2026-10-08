@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { LLMConfig, LLMProvider } from '~~/shared/types/scan'
-import type { ScanTargetKind } from '~~/shared/utils/scan'
+import type { LLMConfig, LLMProvider } from '../../shared/types/scan'
+import type { ScanTargetKind } from '../../shared/utils/scan'
 
 // Awaited so the server-rendered default provider matches the client's (see the watch below).
 const { data: health, pending: healthPending } = await useHealth()

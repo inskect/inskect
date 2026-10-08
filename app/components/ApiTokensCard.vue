@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ApiToken, CreatedApiToken } from '~~/shared/types/auth'
+import type { ApiToken, CreatedApiToken } from '../../shared/types/auth'
 
 // Personal API tokens (backend/app/auth/api_tokens.py): the signed-in user's, to create and revoke;
 // with userId, that user's on their admin page, to revoke.

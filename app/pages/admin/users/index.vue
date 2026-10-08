@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { DirectoryUser } from '~~/shared/types/backoffice'
-import type { UserRole } from '~~/shared/types/auth'
+import type { DirectoryUser } from '../../../../shared/types/backoffice'
+import type { UserRole } from '../../../../shared/types/auth'
 
 useSeoMeta({ title: 'Users — Backoffice — Inskect' })
 

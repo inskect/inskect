@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Builds a small app that extends this one as a Nuxt layer, the way another deployment does
-# (docs/EXTENDING.md#layering-the-web-app), and checks it serves both apps' pages. The layer is
+# Builds and typechecks a small app that extends this one as a Nuxt layer, the way another
+# deployment does (docs/EXTENDING.md#layering-the-web-app), and checks it serves both apps' pages. The layer is
 # this checkout's tracked files, uncommitted changes included, installed as a package: with its
 # dependencies but not its development ones, as from `github:inskect/inskect#vX.Y.Z`.
 set -euo pipefail
@@ -18,7 +18,7 @@ trap cleanup EXIT
 snapshot=$(git -C "$root" stash create)
 git -C "$root" archive --prefix=package/ -o "$work/inskect.tgz" "${snapshot:-HEAD}"
 
-nuxt=$(node -p "require('$root/package.json').dependencies.nuxt")
+version() { node -p "const p = require('$root/package.json'); p.dependencies['$1'] ?? p.devDependencies['$1']"; }
 mkdir -p "$work/app/app/pages"
 cat > "$work/app/package.json" <<EOF
 {
@@ -27,7 +27,12 @@ cat > "$work/app/package.json" <<EOF
   "type": "module",
   "dependencies": {
     "inskect": "file:../inskect.tgz",
-    "nuxt": "$nuxt"
+    "nuxt": "$(version nuxt)"
+  },
+  "devDependencies": {
+    "@types/node": "$(version @types/node)",
+    "typescript": "$(version typescript)",
+    "vue-tsc": "$(version vue-tsc)"
   }
 }
 EOF
@@ -41,6 +46,7 @@ allowBuilds:
   unrs-resolver: false
   vue-demi: false
 EOF
+cp "$root/tsconfig.json" "$work/app/"
 cat > "$work/app/nuxt.config.ts" <<'EOF'
 export default defineNuxtConfig({ extends: ['inskect'] })
 EOF
@@ -52,6 +58,7 @@ EOF
 
 cd "$work/app"
 pnpm install --reporter=append-only
+pnpm exec nuxt typecheck
 pnpm exec nuxt build
 
 NUXT_API_BASE=http://127.0.0.1:9 PORT=$port node .output/server/index.mjs &

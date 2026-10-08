@@ -1,5 +1,5 @@
 import type { H3Event } from 'h3'
-import type { User } from '~~/shared/types/auth'
+import type { User } from '../../shared/types/auth'
 
 interface TokenResponse {
   token: string

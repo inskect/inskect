@@ -1,4 +1,4 @@
-import type { ScanHistoryResponse } from '~~/shared/types/scan'
+import type { ScanHistoryResponse } from '../../../shared/types/scan'
 
 export default defineEventHandler(async (event) => {
   // target: only that target's scans, its timeline. sort and order are checked by the API.

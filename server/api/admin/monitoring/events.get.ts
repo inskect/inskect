@@ -1,4 +1,4 @@
-import type { MonitorEventPage } from '~~/shared/types/backoffice'
+import type { MonitorEventPage } from '../../../../shared/types/backoffice'
 
 // The events monitoring kept, newest first.
 export default defineEventHandler(async (event) => {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ScanReport, Severity } from '~~/shared/types/scan'
+import type { ScanReport, Severity } from '../../shared/types/scan'
 
 const props = defineProps<{
   report: ScanReport

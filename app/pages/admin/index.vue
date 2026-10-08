@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Overview } from '~~/shared/types/backoffice'
+import type { Overview } from '../../../shared/types/backoffice'
 
 useSeoMeta({ title: 'Backoffice — Inskect' })
 

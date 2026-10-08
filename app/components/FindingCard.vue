@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Finding } from '~~/shared/types/scan'
+import type { Finding } from '../../shared/types/scan'
 
 const props = defineProps<{
   finding: Finding

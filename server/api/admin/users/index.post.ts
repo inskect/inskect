@@ -1,4 +1,4 @@
-import type { User, UserRole } from '~~/shared/types/auth'
+import type { User, UserRole } from '../../../../shared/types/auth'
 
 export default defineEventHandler(async (event) => {
   const { email, password, role } = await readBody<{ email?: string, password?: string, role?: UserRole }>(event)

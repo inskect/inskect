@@ -1,4 +1,4 @@
-import type { CreatedApiToken } from '~~/shared/types/auth'
+import type { CreatedApiToken } from '../../../shared/types/auth'
 
 // A new API token: the only response that ever holds the token itself.
 export default defineEventHandler(async (event) => {

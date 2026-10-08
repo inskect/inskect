@@ -1,4 +1,4 @@
-import type { ActivityPage } from '~~/shared/types/backoffice'
+import type { ActivityPage } from '../../../shared/types/backoffice'
 
 export default defineEventHandler(async (event) => {
   const { limit, offset } = getQuery<{ limit?: string, offset?: string }>(event)

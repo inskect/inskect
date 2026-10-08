@@ -1,4 +1,4 @@
-import type { ScanHistoryResponse } from '~~/shared/types/scan'
+import type { ScanHistoryResponse } from '../../shared/types/scan'
 
 const PAGE_SIZE = 20
 

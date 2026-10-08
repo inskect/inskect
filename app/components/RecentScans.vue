@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ScanSummary } from '~~/shared/types/scan'
+import type { ScanSummary } from '../../shared/types/scan'
 
 const SHOWN = 5
 

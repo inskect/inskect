@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ActivityEntry } from '~~/shared/types/backoffice'
+import type { ActivityEntry } from '../../shared/types/backoffice'
 
 defineProps<{
   entries: ActivityEntry[]

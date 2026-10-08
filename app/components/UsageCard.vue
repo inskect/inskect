@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { UsageResponse } from '~~/shared/types/settings'
+import type { UsageResponse } from '../../shared/types/settings'
 
 const { data: usage } = await useFetch<UsageResponse>('/api/account/usage')
 

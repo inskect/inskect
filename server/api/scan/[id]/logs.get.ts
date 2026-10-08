@@ -1,4 +1,4 @@
-import type { ScanLogsResponse } from '~~/shared/types/scan'
+import type { ScanLogsResponse } from '../../../../shared/types/scan'
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')

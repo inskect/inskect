@@ -1,4 +1,4 @@
-import type { SettingsResponse } from '~~/shared/types/settings'
+import type { SettingsResponse } from '../../shared/types/settings'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody<{

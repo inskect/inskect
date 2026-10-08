@@ -1,4 +1,4 @@
-import type { Severity } from '~~/shared/types/scan'
+import type { Severity } from '../../shared/types/scan'
 
 export const SEVERITY_LABEL: Record<Severity, string> = {
   CRITICAL: 'Critical',

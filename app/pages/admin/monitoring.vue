@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { MonitorEventFilter, MonitorEventKind, MonitorEventPage, Monitoring } from '~~/shared/types/backoffice'
+import type { MonitorEventFilter, MonitorEventKind, MonitorEventPage, Monitoring } from '../../../shared/types/backoffice'
 
 // How scans are doing, what raises an alert and where it goes, and every event monitoring kept
 // (backend/app/monitoring.py).

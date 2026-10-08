@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { Recommendation, ScanSummary } from '~~/shared/types/scan'
+import type { Recommendation, ScanSummary } from '../../shared/types/scan'
 import type { HistorySort, SortOrder } from '../composables/useScanHistory'
-import type { SettingsResponse } from '~~/shared/types/settings'
+import type { SettingsResponse } from '../../shared/types/settings'
 
 useSeoMeta({ title: 'Inspection history — Inskect' })
 

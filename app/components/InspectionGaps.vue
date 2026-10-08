@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { InspectionGaps } from '~~/shared/utils/coverage'
+import type { InspectionGaps } from '../../shared/utils/coverage'
 
 const props = defineProps<{ gaps: InspectionGaps }>()
 

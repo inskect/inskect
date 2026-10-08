@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { McpServer } from '~~/shared/types/scan'
+import type { McpServer } from '../../shared/types/scan'
 
 const props = defineProps<{ server: McpServer }>()
 

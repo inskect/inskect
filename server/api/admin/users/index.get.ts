@@ -1,4 +1,4 @@
-import type { DirectoryUser } from '~~/shared/types/backoffice'
+import type { DirectoryUser } from '../../../../shared/types/backoffice'
 
 export default defineEventHandler(async (event) => {
   const { query } = getQuery<{ query?: string }>(event)
