@@ -1,6 +1,7 @@
 name: Release
 
-# A signed tag on main releases its commit (CONTRIBUTING.md#releases):
+# A tag signed by a maintainer (.github/allowed_signers) on main releases its commit
+# (CONTRIBUTING.md#releases):
 # - vX.Y.Z: images tagged X.Y.Z, X.Y, X and latest, a GitHub Release marked Latest, and the major
 #   tag vX moved to it for the GitHub Action. On a commit that already has a vX.Y.Z-rc.N tag, the
 #   release candidate's images are re-tagged, not rebuilt: what was tested is what ships.
@@ -38,6 +39,23 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+      # GitHub can't require a signed tag: only one signed by a maintainer's key releases anything.
+      # The keys are main's .github/allowed_signers, not the tagged commit's.
+      - name: Check the tag's signature
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          git fetch --force origin "refs/tags/$TAG:refs/tags/$TAG"
+          if [ "$(git cat-file -t "$TAG")" != tag ]; then
+            echo "::error::$TAG is a lightweight tag: create it signed, with git tag -s"
+            exit 1
+          fi
+          git show origin/main:.github/allowed_signers > "$RUNNER_TEMP/allowed_signers"
+          if ! git -c gpg.ssh.allowedSignersFile="$RUNNER_TEMP/allowed_signers" verify-tag "$TAG"; then
+            echo "::error::$TAG isn't signed by a key in .github/allowed_signers"
+            exit 1
+          fi
       - id: plan
         env:
           TAG: ${{ github.ref_name }}
