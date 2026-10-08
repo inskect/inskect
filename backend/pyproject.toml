@@ -18,6 +18,20 @@ dependencies = [
     "python-multipart>=0.0.20",
 ]
 
+# Installable, for a deployment that extends the API (docs/EXTENDING.md):
+#   inskect-api @ git+https://github.com/inskect/inskect.git@v1.1.0#subdirectory=backend
+# installs the `app` package. This checkout runs it from source instead (package = false).
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.hatch.metadata]
+# skillspector is pinned to a commit of its repository.
+allow-direct-references = true
+
 [tool.uv]
 package = false
 
