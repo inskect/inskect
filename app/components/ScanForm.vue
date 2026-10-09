@@ -424,12 +424,7 @@ const moreSummary = computed(() => {
 })
 
 // The file goes with the scan.
-async function submitUpload(picked: File, options: Record<string, unknown>): Promise<{ id: string }> {
-  const form = new FormData()
-  form.append('file', picked)
-  form.append('options', JSON.stringify(options))
-  return await $fetch<{ id: string }>('/api/scan/upload', { method: 'POST', body: form })
-}
+const submitUpload = useSkillUpload()
 
 const { track } = useAnalytics()
 
