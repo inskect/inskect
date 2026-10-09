@@ -23,6 +23,17 @@ describe('robotsTxt', () => {
   })
 })
 
+describe('pages an extending app adds', () => {
+  it('are indexable and listed in the sitemap', () => {
+    expect(isIndexable('/terms', ['/terms'])).toBe(true)
+    expect(isIndexable('/terms/', ['/terms'])).toBe(true)
+    expect(isIndexable('/terms')).toBe(false)
+    const locs = (xml: string) => [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m => m[1])
+    expect(locs(sitemapXml({ siteUrl: 'https://s.example', signupOpen: false, publicPages: ['/terms'] })))
+      .toEqual(['https://s.example/', 'https://s.example/terms'])
+  })
+})
+
 describe('sitemapXml', () => {
   const locs = (xml: string) => [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map(match => match[1])
 

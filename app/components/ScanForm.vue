@@ -747,7 +747,7 @@ async function submit() {
           <UFormField
             v-if="needsApiKey"
             label="API key"
-            description="Sent only for this inspection, used to call the provider directly, never stored."
+            description="Used only for this inspection, to call the provider directly, and deleted once it has run."
           >
             <template
               v-if="API_KEY_LINKS[provider]"

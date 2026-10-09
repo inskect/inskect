@@ -4,8 +4,10 @@
 
 const INDEXABLE_PATHS = new Set(['/', '/signup'])
 
-export function isIndexable(path: string): boolean {
-  return INDEXABLE_PATHS.has(path === '/' ? path : path.replace(/\/+$/, ''))
+// `publicPages`: app.config's site.publicPages, pages an extending app adds.
+export function isIndexable(path: string, publicPages: readonly string[] = []): boolean {
+  const page = path === '/' ? path : path.replace(/\/+$/, '')
+  return INDEXABLE_PATHS.has(page) || publicPages.includes(page)
 }
 
 // Kept out of crawlers' way in robots.txt; noindex covers the rest.
@@ -17,10 +19,12 @@ export interface SitemapInput {
   siteUrl: string
   // Whether visitors can create an account here, so /signup is worth listing.
   signupOpen: boolean
+  // app.config's site.publicPages.
+  publicPages?: readonly string[]
 }
 
-export function sitemapPaths({ signupOpen }: Omit<SitemapInput, 'siteUrl'>): string[] {
-  return ['/', ...(signupOpen ? ['/signup'] : [])]
+export function sitemapPaths({ signupOpen, publicPages = [] }: Omit<SitemapInput, 'siteUrl'>): string[] {
+  return ['/', ...(signupOpen ? ['/signup'] : []), ...publicPages]
 }
 
 function escapeXml(value: string): string {

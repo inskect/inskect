@@ -117,6 +117,8 @@ async function submit() {
         :title="errorMessage"
       />
 
+      <SignupNotice />
+
       <UButton
         type="submit"
         color="primary"

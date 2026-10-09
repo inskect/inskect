@@ -11,7 +11,7 @@ const siteUrl = useSiteUrl()
 // Only the public pages are indexed (shared/utils/seo.ts); their canonical URL is on the configured
 // address, so the production alias and a custom domain don't compete.
 const siteUrlConfigured = !!useRuntimeConfig().public.siteUrl
-const indexable = computed(() => isIndexable(route.path))
+const indexable = computed(() => isIndexable(route.path, site.publicPages))
 const canonical = computed(() => siteUrlConfigured && indexable.value ? `${siteUrl}${route.path}` : null)
 useHead({
   link: () => canonical.value ? [{ rel: 'canonical', href: canonical.value }] : []
@@ -169,6 +169,20 @@ const accountMenu = computed(() => [
           >get this server’s source code</ULink>.
           It’s an independent web UI for NVIDIA’s skillspector, not affiliated with or endorsed by NVIDIA.
         </p>
+        <nav
+          v-if="site.footerLinks.length"
+          aria-label="Site"
+          class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs"
+        >
+          <ULink
+            v-for="link in site.footerLinks"
+            :key="link.to"
+            :to="link.to"
+            class="text-graphite-300 underline-offset-2 hover:text-white hover:underline"
+          >
+            {{ link.label }}
+          </ULink>
+        </nav>
       </UContainer>
     </footer>
   </UApp>

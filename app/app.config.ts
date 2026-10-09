@@ -8,7 +8,18 @@ export default defineAppConfig({
       alt: 'Inskect: inspect a skill before it runs. An inspection report stamped Rejected.'
     },
     repo: 'inskect/inskect',
-    scannerRepo: 'NVIDIA/skillspector'
+    scannerRepo: 'NVIDIA/skillspector',
+    // What an app extending this one adds to it (docs/EXTENDING.md#layering-the-web-app). Nothing by
+    // default.
+    // Pages of its own that anyone may open signed out, that search engines may index, and that the
+    // sitemap lists, e.g. ['/terms'].
+    publicPages: [] as string[],
+    // Links at the foot of every page.
+    footerLinks: [] as { label: string, to: string }[],
+    // The landing page's link to what's kept and how. Unset, the security model.
+    privacyLink: null as { label: string, to: string } | null,
+    // The FAQ's answer to what it costs, before the account limits. Unset, that it's free software.
+    costAnswer: ''
   },
   ui: {
     colors: {

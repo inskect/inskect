@@ -5,12 +5,14 @@ import type { Feature } from './landing/FeatureGrid.vue'
 // (session.features), and where to sign up. Its own chunk, without any of the scanner's code.
 const { session } = useAuth()
 const { site } = useAppConfig()
+// Awaited, so the AI review text rendered on the server is the one the browser shows.
+const { data: health } = await useHealth()
 
 const features = computed(() => session.value?.features)
 const repoUrl = `https://github.com/${site.repo}`
 const docsUrl = `${repoUrl}/tree/main/docs`
 // What's kept, and how it's protected.
-const privacyLink = { to: `${repoUrl}/blob/main/docs/SECURITY_MODEL.md`, label: 'Read the security model' }
+const privacyLink = site.privacyLink ?? { to: `${repoUrl}/blob/main/docs/SECURITY_MODEL.md`, label: 'Read the security model' }
 
 const STEPS = [
   { label: 'Target', title: 'Paste a link', text: 'A GitHub, GitLab, Bitbucket or Hugging Face repository or folder, a single SKILL.md, an upload, or an MCP server’s name.' },
@@ -24,7 +26,7 @@ const inspectable = computed<Feature[]>(() => [
   ...(features.value?.github ? [{ title: 'Private GitHub repositories', text: 'Connect GitHub, choose the repositories it may read, and inspect them like any link. The report stays yours.' }] : []),
   { title: 'Repositories with several skills', text: 'Each skill gets its own verdict and report, under one overall result.' },
   { title: 'MCP servers', text: 'A server’s name from the MCP Registry, to check its posture: pinned packages with valid hashes, a source repository, an active status and HTTPS endpoints.' },
-  { title: 'Optional AI review', text: 'A deeper, semantic read of the skill with Claude, OpenAI or Ollama, through your own key or endpoint. The skill’s content goes to that provider, and only when you ask.' }
+  { title: 'Optional AI review', text: aiReviewText(health.value?.ai_providers, health.value?.allow_custom_ai_url) }
 ])
 
 const KEEP_TRACK: Feature[] = [

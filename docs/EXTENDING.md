@@ -114,6 +114,16 @@ Import this app's files by relative path: in the extending app, `~` and `~~` are
 directories, which the lint rule in `eslint.config.mjs` enforces here. `scripts/check-layer.sh`
 builds and typechecks such an app, which CI runs on every change.
 
+- **Pages of its own, public:** list them in `app.config.ts`'s `site.publicPages`, e.g.
+  `['/terms', '/privacy']`. Anyone may open them signed out, search engines may index them, and
+  the sitemap lists them.
+- **Footer links:** `site.footerLinks`, as `[{ label, to }]`.
+- **Notices:** `SignupNotice` (above the sign-up button) and `AccountDeletionNotice` (under what
+  deleting an account removes) render nothing. A component of the same name in the extending app
+  takes their place, e.g. to link its terms or privacy policy.
+- **Wording:** `site.privacyLink` (`{ label, to }`) replaces the landing page's link to the security
+  model, and `site.costAnswer` the FAQ's answer to what it costs. The landing page describes AI
+  review from the providers the API allows (`INSKECT_AI_PROVIDERS`, `ALLOW_CUSTOM_AI_URL`).
 - **Analytics:** `useAnalytics()` (`app/composables/`) tracks a few events, and does nothing until
   a plugin provides `$track`. `app/utils/analytics.ts` reduces an address to its route's pattern,
   so no token, id or inspected link leaves the browser.

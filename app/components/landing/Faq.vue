@@ -12,7 +12,7 @@ const quotaAnswer = computed(() => {
   const limits = daily === null && concurrent === null
     ? 'Accounts on this server have no inspection quota.'
     : `Each account can run ${[daily === null ? null : inspectionsPerDay(daily), concurrent === null ? null : `${concurrent} at once`].filter(Boolean).join(', and ')}.`
-  const cost = 'It’s free and open source; this server’s admin sets its limits.'
+  const cost = site.costAnswer || 'It’s free and open source; this server’s admin sets its limits.'
   return `${cost} ${limits}`
 })
 

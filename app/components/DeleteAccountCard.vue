@@ -44,6 +44,7 @@ async function remove() {
             reports, shared links and badges, your Claude key, API tokens and GitHub connection. The
             activity log keeps what happened, without your email.
           </p>
+          <AccountDeletionNotice />
         </div>
         <UButton
           v-if="!confirming"
