@@ -14,6 +14,7 @@ export default defineEventHandler(async (event) => {
   })
   return sitemapXml({
     siteUrl,
-    signupOpen: session?.auth === 'accounts' && session.signup_allowed
+    signupOpen: session?.auth === 'accounts' && session.signup_allowed,
+    publicPages: useAppConfig().site.publicPages
   })
 })

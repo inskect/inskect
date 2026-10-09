@@ -55,13 +55,29 @@ cat > "$work/app/app/pages/layer-check.vue" <<'EOF'
   <p>Served by the extending app</p>
 </template>
 EOF
+# What an extending app adds (docs/EXTENDING.md): a public page, a footer link, and a component of
+# its own in place of the layer's.
+cat > "$work/app/app/app.config.ts" <<'EOF'
+export default defineAppConfig({
+  site: {
+    publicPages: ['/layer-check'],
+    footerLinks: [{ label: 'Layer check link', to: '/layer-check' }]
+  }
+})
+EOF
+mkdir -p "$work/app/app/components"
+cat > "$work/app/app/components/SignupNotice.vue" <<'EOF'
+<template>
+  <p>Notice from the extending app</p>
+</template>
+EOF
 
 cd "$work/app"
 pnpm install --reporter=append-only
 pnpm exec nuxt typecheck
 pnpm exec nuxt build
 
-NUXT_API_BASE=http://127.0.0.1:9 PORT=$port node .output/server/index.mjs &
+NUXT_API_BASE=http://127.0.0.1:9 NUXT_PUBLIC_SITE_URL=https://layer.example PORT=$port node .output/server/index.mjs &
 server=$!
 for _ in $(seq 1 30); do
   curl -sf "http://127.0.0.1:$port/" >/dev/null && break
@@ -77,3 +93,10 @@ check() {
 check / '— Inskect</title>'
 check /history 'Inspection history'
 check /layer-check 'Served by the extending app'
+check / 'Layer check link'
+check /signup 'Notice from the extending app'
+check /sitemap.xml '<loc>https://layer.example/layer-check</loc>'
+indexed() { ! curl -sfI "http://127.0.0.1:$port$1" | grep -qi '^x-robots-tag: noindex'; }
+indexed /layer-check || { echo "::error::/layer-check, a public page, says noindex"; exit 1; }
+! indexed /history || { echo "::error::/history doesn't say noindex"; exit 1; }
+echo "robots: ok"
