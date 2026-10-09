@@ -37,7 +37,11 @@ cat > "$work/app/package.json" <<EOF
 }
 EOF
 # Install scripts: none needed; the layer's own (nuxt prepare) is for working on this repository.
+# What the layer imports itself must be its own dependency, not one reachable only because pnpm
+# hoisted another's: hosts don't all hoist alike (Vercel's build didn't find tailwindcss). So those
+# aren't hoisted here.
 cat > "$work/app/pnpm-workspace.yaml" <<'EOF'
+hoistPattern: ['*', '!tailwindcss', '!@iconify-json/*']
 allowBuilds:
   '@parcel/watcher': false
   '@tailwindcss/oxide': false
