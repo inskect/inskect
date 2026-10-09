@@ -129,5 +129,11 @@ builds and typechecks such an app, which CI runs on every change.
 - **Analytics:** `useAnalytics()` (`app/composables/`) tracks a few events, and does nothing until
   a plugin provides `$track`. `app/utils/analytics.ts` reduces an address to its route's pattern,
   so no token, id or inspected link leaves the browser.
+- **Uploads:** the scan form sends an uploaded skill through `$uploadSkill(file, options)` when a
+  plugin provides it (`app/composables/useSkillUpload.ts`), e.g. to put the file in object storage
+  first when a request can't carry it, then queue the inspection with a server route of its own
+  that calls `queue_scan()` with `keep_upload` (see [Wrapping the API](#wrapping-the-api)). It
+  returns the queued inspection's `{ id }`. Without one, the file and the options go in one request
+  to `/api/scan/upload`.
 - **Content-Security-Policy:** `NUXT_CSP_CONNECT_SRC` adds origins the browser may send requests
   to, for a service a layer talks to.
