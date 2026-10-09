@@ -92,85 +92,61 @@ jobs:
           } >> "$GITHUB_OUTPUT"
           echo "Releasing $version (pre-release: $prerelease), images tagged: $image_tags${promote:+, promoted from $promote}"
 
-  images:
+  # Each image for each platform, on a runner of that platform: no emulation, which was slow and
+  # hung v1.1.0's arm64 web build. Pushed by digest only; `images` then tags them as one image.
+  build:
     needs: [ci, plan]
-    runs-on: ubuntu-latest
-    # The arm64 build runs under emulation: about 10 minutes, and it has hung once. A hung build
-    # fails here, to be re-run, rather than after GitHub's 6 hours.
-    timeout-minutes: 45
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
     permissions:
       contents: read
       packages: write
     strategy:
       matrix:
+        component: [api, web]
+        platform: [linux/amd64, linux/arm64]
         include:
           - component: api
             context: ./backend
           - component: web
             context: .
+          - platform: linux/amd64
+            runner: ubuntu-latest
+            arch: amd64
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+            arch: arm64
     env:
       VERSION: ${{ needs.plan.outputs.version }}
-      IMAGE_TAGS: ${{ needs.plan.outputs.image-tags }}
       PROMOTE_FROM: ${{ needs.plan.outputs.promote-from }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - id: image
-        run: |
-          owner="${GITHUB_REPOSITORY_OWNER,,}"
-          image="ghcr.io/$owner/inskect-${{ matrix.component }}"
-          echo "name=$image" >> "$GITHUB_OUTPUT"
-          {
-            echo "tags<<EOF"
-            for tag in $IMAGE_TAGS; do echo "$image:$tag"; done
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/inskect-${{ matrix.component }}" >> "$GITHUB_OUTPUT"
       - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
-      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
-
-      # Build once, promote: the release candidate's images, when they were published.
+      # Build once, promote: nothing to build when the release candidate's image is published.
       - id: promote
-        if: env.PROMOTE_FROM != ''
         env:
           IMAGE: ${{ steps.image.outputs.name }}
         run: |
-          if docker buildx imagetools inspect "$IMAGE:$PROMOTE_FROM" > /dev/null 2>&1; then
+          if [ -n "$PROMOTE_FROM" ] && docker buildx imagetools inspect "$IMAGE:$PROMOTE_FROM" > /dev/null 2>&1; then
             echo "found=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "::warning::$IMAGE:$PROMOTE_FROM isn't published: building $VERSION instead"
-            echo "found=false" >> "$GITHUB_OUTPUT"
           fi
-      - if: steps.promote.outputs.found == 'true'
-        env:
-          IMAGE: ${{ steps.image.outputs.name }}
-        run: |
-          set -euo pipefail
-          args=()
-          for tag in $IMAGE_TAGS; do args+=(--tag "$IMAGE:$tag"); done
-          docker buildx imagetools create "${args[@]}" "$IMAGE:$PROMOTE_FROM"
-          digest() { docker buildx imagetools inspect "$1" --format '{{json .Manifest.Digest}}'; }
-          expected=$(digest "$IMAGE:$PROMOTE_FROM")
-          for tag in $IMAGE_TAGS; do
-            actual=$(digest "$IMAGE:$tag")
-            if [ "$actual" != "$expected" ]; then
-              echo "::error::$IMAGE:$tag is $actual, not the release candidate's $expected"
-              exit 1
-            fi
-          done
-          echo "$IMAGE: $IMAGE_TAGS re-tagged from $PROMOTE_FROM ($expected)"
-
       - if: steps.promote.outputs.found != 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - if: steps.promote.outputs.found != 'true'
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - id: build
+        if: steps.promote.outputs.found != 'true'
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: ${{ matrix.context }}
           target: production
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.image.outputs.tags }}
+          platforms: ${{ matrix.platform }}
+          outputs: type=image,name=${{ steps.image.outputs.name }},push-by-digest=true,name-canonical=true,push=true
           # The API reports its version (backend/Dockerfile); the web image has none to stamp.
           build-args: ${{ matrix.component == 'api' && format('VERSION={0}', env.VERSION) || '' }}
           labels: |
@@ -179,7 +155,100 @@ jobs:
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.licenses=AGPL-3.0-only
-          cache-from: type=gha,scope=${{ matrix.component }}
+          # CI's docker job fills the amd64 cache, under the component's name.
+          cache-from: type=gha,scope=${{ matrix.arch == 'amd64' && matrix.component || format('{0}-{1}', matrix.component, matrix.arch) }}
+          cache-to: ${{ matrix.arch == 'arm64' && format('type=gha,mode=max,scope={0}-arm64', matrix.component) || '' }}
+      - if: steps.promote.outputs.found != 'true'
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/digests"
+          touch "$RUNNER_TEMP/digests/${DIGEST#sha256:}"
+      - if: steps.promote.outputs.found != 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: digests-${{ matrix.component }}-${{ matrix.arch }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  # Each image under its tags: the platforms just built, as one image, or the release candidate's
+  # image re-tagged.
+  images:
+    needs: [plan, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        component: [api, web]
+    env:
+      IMAGE_TAGS: ${{ needs.plan.outputs.image-tags }}
+      PROMOTE_FROM: ${{ needs.plan.outputs.promote-from }}
+    steps:
+      - id: image
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/inskect-${{ matrix.component }}" >> "$GITHUB_OUTPUT"
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - id: promote
+        env:
+          IMAGE: ${{ steps.image.outputs.name }}
+        run: |
+          if [ -z "$PROMOTE_FROM" ]; then
+            exit 0
+          elif docker buildx imagetools inspect "$IMAGE:$PROMOTE_FROM" > /dev/null 2>&1; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::$IMAGE:$PROMOTE_FROM isn't published: built $(echo "$IMAGE_TAGS" | cut -d' ' -f1) instead"
+          fi
+      - if: steps.promote.outputs.found != 'true'
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: digests-${{ matrix.component }}-*
+          path: ${{ runner.temp }}/digests
+          merge-multiple: true
+      - name: Tag the image
+        env:
+          IMAGE: ${{ steps.image.outputs.name }}
+          PROMOTED: ${{ steps.promote.outputs.found }}
+        run: |
+          set -euo pipefail
+          args=()
+          for tag in $IMAGE_TAGS; do args+=(--tag "$IMAGE:$tag"); done
+          if [ "$PROMOTED" = true ]; then
+            sources=("$IMAGE:$PROMOTE_FROM")
+          else
+            sources=()
+            for digest in "$RUNNER_TEMP"/digests/*; do sources+=("$IMAGE@sha256:$(basename "$digest")"); done
+            if [ "${#sources[@]}" -ne 2 ]; then
+              echo "::error::Expected an amd64 and an arm64 image, got ${#sources[@]}"
+              exit 1
+            fi
+          fi
+          docker buildx imagetools create "${args[@]}" "${sources[@]}"
+          # Every tag is the same image, with both platforms.
+          digest() { docker buildx imagetools inspect "$1" --format '{{json .Manifest.Digest}}'; }
+          first=$(echo "$IMAGE_TAGS" | cut -d' ' -f1)
+          expected=$(digest "$IMAGE:$first")
+          for tag in $IMAGE_TAGS; do
+            actual=$(digest "$IMAGE:$tag")
+            if [ "$actual" != "$expected" ]; then
+              echo "::error::$IMAGE:$tag is $actual, not $expected"
+              exit 1
+            fi
+          done
+          platforms=$(docker buildx imagetools inspect "$IMAGE:$first" --format '{{json .Manifest.Manifests}}' | jq -r '[.[].platform | select(.os != "unknown") | .os + "/" + .architecture] | sort | join(",")')
+          if [ "$platforms" != "linux/amd64,linux/arm64" ]; then
+            echo "::error::$IMAGE:$first has $platforms, not linux/amd64,linux/arm64"
+            exit 1
+          fi
+          echo "$IMAGE: $IMAGE_TAGS → $expected ($platforms)${PROMOTED:+, re-tagged from $PROMOTE_FROM}"
 
   release:
     needs: [plan, images]
