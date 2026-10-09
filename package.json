@@ -18,18 +18,18 @@
   },
   "dependencies": {
     "@iconify-json/lucide": "^1.2.140",
+    "@iconify-json/simple-icons": "^1.2.99",
     "@nuxt/fonts": "^0.14.0",
     "@nuxt/ui": "^4.11.3",
-    "nuxt": "^4.5.2"
+    "nuxt": "^4.5.2",
+    "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
     "@clack/prompts": "^1.8.1",
-    "@iconify-json/simple-icons": "^1.2.99",
     "@nuxt/eslint": "^1.17.0",
     "@types/node": "^26.6.4",
     "eslint": "^10.12.0",
     "playwright": "1.63.0",
-    "tailwindcss": "^4.3.3",
     "typescript": "^6.0.3",
     "vitest": "^5.0.3",
     "vue-tsc": "^3.3.12"
