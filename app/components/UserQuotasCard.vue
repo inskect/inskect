@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { UserQuotas } from '~~/shared/types/backoffice'
+import type { UserQuotas } from '../../shared/types/backoffice'
 
 // A user's own scan quotas on their backoffice page (PUT /api/admin/users/{id}/quotas): the
 // server's, a number of their own, or no limit. Applies from their next scan.

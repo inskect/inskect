@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Health } from '~~/shared/types/backoffice'
+import type { Health } from '../../shared/types/backoffice'
 
 // The backoffice's health panel: the last day's failures, the last error, and where alerts go
 // (backend/app/monitoring.py); the monitoring page has the rest.

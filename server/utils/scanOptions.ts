@@ -1,4 +1,4 @@
-import type { LLMConfig } from '~~/shared/types/scan'
+import type { LLMConfig } from '../../shared/types/scan'
 
 export interface ScanOptionsBody {
   llm?: LLMConfig

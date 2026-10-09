@@ -95,6 +95,9 @@ jobs:
   images:
     needs: [ci, plan]
     runs-on: ubuntu-latest
+    # The arm64 build runs under emulation: about 10 minutes, and it has hung once. A hung build
+    # fails here, to be re-run, rather than after GitHub's 6 hours.
+    timeout-minutes: 45
     permissions:
       contents: read
       packages: write

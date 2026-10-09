@@ -1,4 +1,4 @@
-import type { ApiToken } from '~~/shared/types/auth'
+import type { ApiToken } from '../../../../../shared/types/auth'
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')

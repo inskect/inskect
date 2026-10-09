@@ -1,4 +1,4 @@
-import type { Monitoring } from '~~/shared/types/backoffice'
+import type { Monitoring } from '../../../../shared/types/backoffice'
 
 // The monitoring page's counts, alert rules and channels (backend/app/monitoring.py).
 export default defineEventHandler(async (event) => {

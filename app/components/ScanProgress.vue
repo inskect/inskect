@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ScanStatus } from '~~/shared/types/scan'
+import type { ScanStatus } from '../../shared/types/scan'
 
 const props = defineProps<{
   status: ScanStatus | null | undefined

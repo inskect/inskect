@@ -1,4 +1,4 @@
-import type { User, UserRole, UserStatus } from '~~/shared/types/auth'
+import type { User, UserRole, UserStatus } from '../../../../shared/types/auth'
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')

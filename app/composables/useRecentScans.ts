@@ -1,4 +1,4 @@
-import type { ScanHistoryResponse } from '~~/shared/types/scan'
+import type { ScanHistoryResponse } from '../../shared/types/scan'
 
 // Enough to spot a recent scan of the URL being typed; the home page lists the first few.
 const RECENT_LIMIT = 20

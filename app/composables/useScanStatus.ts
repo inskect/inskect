@@ -1,4 +1,4 @@
-import type { ScanStatus } from '~~/shared/types/scan'
+import type { ScanStatus } from '../../shared/types/scan'
 
 /** A scan's status and result from url (/api/scan/<id>, or /api/shared/<token>), polled until done. */
 export function useScanStatus(url: string) {

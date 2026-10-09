@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ActivityPage } from '~~/shared/types/backoffice'
+import type { ActivityPage } from '../../../shared/types/backoffice'
 
 useSeoMeta({ title: 'Activity — Backoffice — Inskect' })
 

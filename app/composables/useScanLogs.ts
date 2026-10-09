@@ -1,4 +1,4 @@
-import type { ScanLogsResponse } from '~~/shared/types/scan'
+import type { ScanLogsResponse } from '../../shared/types/scan'
 
 // As many as the API keeps per scan.
 const MAX_LINES = 500

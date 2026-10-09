@@ -1,4 +1,4 @@
-import type { Recommendation } from '~~/shared/types/scan'
+import type { Recommendation } from '../../shared/types/scan'
 
 // What an inspection report's stamp says (VerdictStamp).
 export const RECOMMENDATION_LABEL: Record<Recommendation, string> = {

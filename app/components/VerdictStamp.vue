@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Recommendation } from '~~/shared/types/scan'
+import type { Recommendation } from '../../shared/types/scan'
 
 // An inspection's verdict, as the stamp on its report: Passed, Review first or Rejected, in the
 // verdict's ink. Without one yet, a dashed "Inspecting…" stamp, or "Didn’t run" once it `failed`.

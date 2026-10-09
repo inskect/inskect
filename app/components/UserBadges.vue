@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { UserRole, UserStatus } from '~~/shared/types/auth'
+import type { UserRole, UserStatus } from '../../shared/types/auth'
 
 defineProps<{
   role: UserRole

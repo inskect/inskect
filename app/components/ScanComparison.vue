@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Recommendation, ScanComparison } from '~~/shared/types/scan'
+import type { Recommendation, ScanComparison } from '../../shared/types/scan'
 
 const props = defineProps<{
   comparison: ScanComparison

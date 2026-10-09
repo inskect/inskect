@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Severity } from '~~/shared/types/scan'
+import type { Severity } from '../../../shared/types/scan'
 
 // A real report, written out rather than loaded: skillspector's own test fixture of a poisoned MCP
 // tool, as a scan of it reports (verdict, score, and three of its nine findings). Static, so the

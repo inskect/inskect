@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { UserDetail } from '~~/shared/types/backoffice'
-import type { UserRole, UserStatus } from '~~/shared/types/auth'
+import type { UserDetail } from '../../../../shared/types/backoffice'
+import type { UserRole, UserStatus } from '../../../../shared/types/auth'
 
 const route = useRoute()
 const id = route.params.id as string

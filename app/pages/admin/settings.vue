@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { SettingsResponse } from '~~/shared/types/settings'
+import type { SettingsResponse } from '../../../shared/types/settings'
 
 useSeoMeta({ title: 'Settings — Backoffice — Inskect' })
 

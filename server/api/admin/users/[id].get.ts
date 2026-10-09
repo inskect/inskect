@@ -1,4 +1,4 @@
-import type { UserDetail } from '~~/shared/types/backoffice'
+import type { UserDetail } from '../../../../shared/types/backoffice'
 
 export default defineEventHandler(async (event) => {
   const id = getRouterParam(event, 'id')

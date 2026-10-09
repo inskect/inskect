@@ -1,4 +1,4 @@
-import type { ActivityEntry } from '~~/shared/types/backoffice'
+import type { ActivityEntry } from '../../shared/types/backoffice'
 
 // How each audit action reads in the activity log: "<actor> <verb> <target>".
 const VERBS: Record<string, { verb: string, icon: string }> = {

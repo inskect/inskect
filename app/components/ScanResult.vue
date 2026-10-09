@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Finding, ScanReport, Severity } from '~~/shared/types/scan'
+import type { Finding, ScanReport, Severity } from '../../shared/types/scan'
 
 // A scan's result: from /api/scan/<id> for someone with access to it (scanId set), or read-only
 // from /api/shared/<token> for anyone with its link (pages/shared/[token].vue).

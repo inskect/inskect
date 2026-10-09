@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { BaselineDownload, ScanReport } from '~~/shared/types/scan'
+import type { BaselineDownload, ScanReport } from '../../shared/types/scan'
 
 const props = withDefaults(defineProps<{
   scanId: string

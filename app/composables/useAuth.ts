@@ -1,4 +1,4 @@
-import type { AuthSession } from '~~/shared/types/auth'
+import type { AuthSession } from '../../shared/types/auth'
 
 // One shared fetch of who's signed in, reused by the route guard, the header and the pages.
 export function useAuth() {

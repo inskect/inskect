@@ -1,4 +1,4 @@
-import type { ScanStatus } from '~~/shared/types/scan'
+import type { ScanStatus } from '../../../shared/types/scan'
 
 // A shared result, for anyone with its link (backend/app/api/routes/shared.py).
 export default defineEventHandler(async (event) => {

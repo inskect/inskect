@@ -1,4 +1,4 @@
-import type { ClaudeKeyStatus } from '~~/shared/types/auth'
+import type { ClaudeKeyStatus } from '../../../shared/types/auth'
 
 export default defineEventHandler(async (event) => {
   const { apiKey } = await readBody<{ apiKey?: string }>(event)

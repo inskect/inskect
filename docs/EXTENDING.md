@@ -109,7 +109,10 @@ and plugins, or replace one with a file at the same path. Install it at a releas
 
 then extend it in `nuxt.config.ts`, with `extends: ['inskect']`. Its install script isn't needed:
 with pnpm, deny it in `pnpm-workspace.yaml`'s `allowBuilds` (`inskect: false`).
-`scripts/check-layer.sh` builds such an app, which CI runs on every change.
+To typecheck it (`nuxt typecheck`), install `typescript`, `vue-tsc` and `@types/node` too.
+Import this app's files by relative path: in the extending app, `~` and `~~` are its own
+directories, which the lint rule in `eslint.config.mjs` enforces here. `scripts/check-layer.sh`
+builds and typechecks such an app, which CI runs on every change.
 
 - **Analytics:** `useAnalytics()` (`app/composables/`) tracks a few events, and does nothing until
   a plugin provides `$track`. `app/utils/analytics.ts` reduces an address to its route's pattern,

@@ -1,4 +1,4 @@
-import type { AuthSession } from '~~/shared/types/auth'
+import type { AuthSession } from '../../shared/types/auth'
 
 // The public pages, for search engines (shared/utils/seo.ts). Only once the server knows its public
 // address (NUXT_PUBLIC_SITE_URL); until then it's not found, and robots.txt doesn't point to it.
