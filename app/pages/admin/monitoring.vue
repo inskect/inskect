@@ -16,12 +16,14 @@ const { data, error, refresh } = await useFetch<Monitoring>('/api/admin/monitori
   query: { hours }
 })
 
-const FILTERS: { label: string, value: MonitorEventFilter }[] = [
+// The built-in filters, and one for each kind of event an extension's alert rule labels.
+const FILTERS = computed<{ label: string, value: MonitorEventFilter }[]>(() => [
   { label: 'Every event', value: 'all' },
   { label: 'Failed inspections', value: 'failures' },
   { label: 'Sign-in lockouts', value: 'lockouts' },
-  { label: 'Alerts sent', value: 'alerts' }
-]
+  { label: 'Alerts sent', value: 'alerts' },
+  ...(data.value?.health.events ?? []).map(event => ({ label: event.label, value: event.kind }))
+])
 const PAGE = 50
 const filter = ref<MonitorEventFilter>('all')
 const limit = ref(PAGE)
@@ -34,11 +36,14 @@ const { data: events, error: eventsError, status: eventsStatus, refresh: refresh
 })
 const hasMore = computed(() => (events.value?.items.length ?? 0) < (events.value?.total ?? 0))
 
-const KINDS: Record<MonitorEventKind, { label: string, icon: string, tone: string }> = {
+const KINDS: Partial<Record<MonitorEventKind, { label: string, icon: string, tone: string }>> = {
   scan_failed: { label: 'Inspection didn’t run', icon: 'i-lucide-circle-x', tone: 'text-medium-ink' },
   sign_in_locked: { label: 'Sign-in locked', icon: 'i-lucide-lock', tone: 'text-medium-ink' },
   alert_sent: { label: 'Alert sent', icon: 'i-lucide-bell-ring', tone: 'text-brand-ink' }
 }
+
+// What an extension's alert rules call their events.
+const eventLabels = computed<Record<string, string>>(() => Object.fromEntries((data.value?.health.events ?? []).map(event => [event.kind, event.label])))
 
 const ruleTitles = computed(() => Object.fromEntries((data.value?.rules ?? []).map(rule => [rule.name, rule.title])))
 
@@ -54,7 +59,8 @@ const tiles = computed(() => {
   const share = health.finished ? Math.round((health.failed / health.finished) * 100) : 0
   return [
     { label: 'Inspections finished', value: health.finished, note: null },
-    { label: 'Failed', value: health.failed, note: health.finished ? `${share}% of finished` : null }
+    { label: 'Failed', value: health.failed, note: health.finished ? `${share}% of finished` : null },
+    ...health.events.map(event => ({ label: event.label, value: event.count, note: null }))
   ]
 })
 
@@ -338,7 +344,7 @@ function reload() {
           />
           <div class="flex min-w-0 flex-1 flex-col gap-0.5">
             <span class="flex flex-wrap items-center gap-x-2 text-sm font-semibold text-highlighted">
-              {{ KINDS[item.kind]?.label ?? item.kind }}
+              {{ KINDS[item.kind]?.label ?? eventLabels[item.kind] ?? item.kind }}
               <NuxtLink
                 v-if="item.scan_id"
                 :to="`/scan/${item.scan_id}`"

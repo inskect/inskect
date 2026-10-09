@@ -20,7 +20,8 @@ const state = computed(() => {
 const tiles = computed(() => {
   const health = props.health
   return [
-    { label: 'Didn’t run', value: health.failed, note: `of ${health.finished} finished` }
+    { label: 'Didn’t run', value: health.failed, note: `of ${health.finished} finished` },
+    ...health.events.map(event => ({ label: event.label, value: event.count, note: null }))
   ]
 })
 
@@ -101,7 +102,7 @@ const channelText = computed(() => props.health.alert_channels.map(channel => ch
       >
         Alerts go to {{ channelText }}.
         <template v-if="health.last_alert">
-          The last one, {{ RULES[health.last_alert.rule ?? ''] ?? health.last_alert.rule }},
+          The last one, {{ RULES[health.last_alert.rule ?? ''] ?? health.last_alert.title ?? health.last_alert.rule }},
           <NuxtTime
             :datetime="health.last_alert.at * 1000"
             relative

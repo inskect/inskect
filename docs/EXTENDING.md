@@ -81,14 +81,16 @@ from my_deployment import routes
 
 app.include_router(routes.router)
 register_rule(Rule("worker_errors", "Scan workers are failing", "Any worker error",
-                   "worker_error", 30 * 60, 60 * 60, measure_worker_errors))
+                   "worker_error", 30 * 60, 60 * 60, measure_worker_errors, label="Worker errors"))
 ```
 
 - **Routes** that start an inspection go through `app.api.routes.scan.queue_scan()`, which applies the
   same checks as the built-in ones (pause, rate limits, quotas, the runner's limits) and records
   the inspection.
 - **Alert rules:** `monitoring.record(kind, message)` stores an event and checks the rules for its
-  kind; `register_rule()` adds one, which the Monitoring page then lists.
+  kind; `register_rule()` adds one, which the Monitoring page then lists. Give the rule a `label`,
+  e.g. `label="Worker errors"`, and the health panel counts its events, which the Monitoring page
+  can also filter by.
 - **Retention on a schedule:** with `INSKECT_RETENTION_LOOP=false`, call
   `retention.sweep_once()` from your own scheduler instead of the hourly task.
 - **AI review:** `INSKECT_AI_PROVIDERS`, `ALLOW_CUSTOM_AI_URL` and `CLAUDE_CLI` limit what

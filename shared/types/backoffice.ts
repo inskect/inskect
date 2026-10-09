@@ -67,7 +67,9 @@ export interface Health {
   alert_channels: ('webhook' | 'email')[]
   // The web app is behind a proxy it doesn't trust: every visitor shares its rate limits.
   proxy_warning: string | null
-  last_alert: { rule: string | null, at: number } | null
+  last_alert: { rule: string | null, title: string | null, at: number } | null
+  // Events of the kinds an extension's alert rules label, over the same hours.
+  events: { kind: string, label: string, count: number }[]
 }
 
 export interface ActivityPage {
@@ -79,6 +81,9 @@ export interface ActivityPage {
 export interface AlertRule {
   name: string
   title: string
+  // The event that makes it check, and what an extension's rule calls those events.
+  kind: string
+  label: string | null
   condition: string
   cooldown_minutes: number
   // False for a rule that doesn't apply here, such as one about accounts without them.
@@ -97,8 +102,10 @@ export interface Monitoring {
   channels: { webhook_host: string | null, emails: string[], email_ready: boolean }
 }
 
-export type MonitorEventKind = 'scan_failed' | 'sign_in_locked' | 'alert_sent'
-export type MonitorEventFilter = 'all' | 'failures' | 'lockouts' | 'alerts'
+// Built in; an extension records kinds of its own.
+export type MonitorEventKind = 'scan_failed' | 'sign_in_locked' | 'alert_sent' | (string & {})
+// Built in, or a kind an extension's alert rule labels.
+export type MonitorEventFilter = 'all' | 'failures' | 'lockouts' | 'alerts' | (string & {})
 
 export interface MonitorEvent {
   id: number

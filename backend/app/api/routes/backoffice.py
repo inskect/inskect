@@ -1,5 +1,4 @@
 import time
-from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
@@ -39,7 +38,17 @@ class HealthError(BaseModel):
 
 class HealthAlert(BaseModel):
     rule: str | None
+    # The rule's title, while it's still registered.
+    title: str | None = None
     at: float
+
+
+class EventCount(BaseModel):
+    """Events of a kind an alert rule labels (monitoring.Rule.label)."""
+
+    kind: str
+    label: str
+    count: int
 
 
 class Health(BaseModel):
@@ -54,6 +63,8 @@ class Health(BaseModel):
     # The web app sits behind a proxy it doesn't trust (app/proxy.py): visitors share rate limits.
     proxy_warning: str | None = None
     last_alert: HealthAlert | None
+    # The labelled kinds' events over the same hours.
+    events: list[EventCount] = []
 
 
 class Overview(BaseModel):
@@ -115,6 +126,8 @@ def read_activity(
 class AlertRule(BaseModel):
     name: str
     title: str
+    kind: str
+    label: str | None = None
     condition: str
     cooldown_minutes: int
     # False for a rule that doesn't apply here, such as one about accounts without them.
@@ -180,10 +193,17 @@ _EVENT_FILTERS: dict[str, tuple[str, ...]] = {
 @router.get("/monitoring/events", response_model=MonitorEventPage)
 def read_monitor_events(
     viewer: AdminViewer,
-    kind: Literal["all", "failures", "lockouts", "alerts"] = Query(default="all"),
+    # One of _EVENT_FILTERS, or a kind an alert rule labels.
+    kind: str = Query(default="all", max_length=100),
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
 ) -> MonitorEventPage:
     """The events monitoring kept (30 days), newest first."""
-    rows, total = db.list_monitor_events(limit, offset, _EVENT_FILTERS[kind])
+    if kind in _EVENT_FILTERS:
+        kinds = _EVENT_FILTERS[kind]
+    elif kind in monitoring.labelled_kinds():
+        kinds = (kind,)
+    else:
+        raise HTTPException(status_code=422, detail="Unknown kind of event")
+    rows, total = db.list_monitor_events(limit, offset, kinds)
     return MonitorEventPage(items=[MonitorEvent(**row) for row in rows], total=total)

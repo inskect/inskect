@@ -176,3 +176,22 @@ def test_the_events_page_lists_and_filters_what_monitoring_kept(client, sent, mo
     assert failures["total"] == 3 and len(failures["items"]) == 2
     assert {item["kind"] for item in failures["items"]} == {"scan_failed"}
     assert failures["items"][0]["scan_id"] == "bad2"
+
+
+def test_a_labelled_rules_events_are_counted_and_filterable(client, sent, monkeypatch):
+    monkeypatch.setattr(monitoring, "_rules", list(monitoring.rules()))
+    monitoring.register_rule(monitoring.Rule(
+        "workers_failing", "Workers are failing", "Any worker error", "worker_error", 60, 3600,
+        lambda now, message: monitoring.Measure(False, "fine", ""), label="Worker errors",
+    ))
+    monitoring.record("worker_error", "connection refused")
+    monitoring.record("worker_error", "timed out")
+
+    page = client.get("/admin/monitoring").json()
+    assert page["health"]["events"] == [{"kind": "worker_error", "label": "Worker errors", "count": 2}]
+    rule = next(rule for rule in page["rules"] if rule["name"] == "workers_failing")
+    assert (rule["kind"], rule["label"]) == ("worker_error", "Worker errors")
+
+    events = client.get("/admin/monitoring/events", params={"kind": "worker_error"}).json()
+    assert events["total"] == 2 and {item["kind"] for item in events["items"]} == {"worker_error"}
+    assert client.get("/admin/monitoring/events", params={"kind": "something_else"}).status_code == 422

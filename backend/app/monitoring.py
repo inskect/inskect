@@ -64,6 +64,9 @@ class Rule:
     measure: Callable[[float, str | None], Measure]
     # Only with sign-in: accounts to guess the passwords of.
     accounts_only: bool = False
+    # What the health panel counts its events as, and the monitoring page filters them by, e.g.
+    # "Worker errors": for an extension's own events. Unset, they're only listed with every event.
+    label: str | None = None
 
 
 # Failure rate: at least this many failures, and at least this share of the scans that finished.
@@ -244,6 +247,8 @@ def health(*, hours: int = 24) -> dict[str, Any]:
     outcomes = db.scan_outcomes(since=since)
     last_error = db.last_monitor_event(*ERROR_KINDS)
     last_alert = db.last_monitor_event(ALERT_SENT)
+    counts = db.monitor_counts(since=since)
+    titles = {rule.name: rule.title for rule in _rules}
     return {
         "hours": hours,
         "finished": outcomes["finished"],
@@ -255,8 +260,22 @@ def health(*, hours: int = 24) -> dict[str, Any]:
         ),
         "alert_channels": channels(),
         "proxy_warning": proxy.warning(),
-        "last_alert": {"rule": last_alert["message"], "at": last_alert["created_at"]} if last_alert else None,
+        "last_alert": (
+            {"rule": last_alert["message"], "title": titles.get(last_alert["message"] or ""), "at": last_alert["created_at"]}
+            if last_alert
+            else None
+        ),
+        "events": [{"kind": kind, "label": label, "count": counts.get(kind, 0)} for kind, label in labelled_kinds().items()],
     }
+
+
+def labelled_kinds() -> dict[str, str]:
+    """The event kinds rules give a label to (Rule.label), by kind, in the order they were registered."""
+    kinds: dict[str, str] = {}
+    for rule in _rules:
+        if rule.label:
+            kinds.setdefault(rule.kind, rule.label)
+    return kinds
 
 
 def rules_status(settings: Settings | None = None) -> list[dict[str, Any]]:
@@ -272,6 +291,8 @@ def rules_status(settings: Settings | None = None) -> list[dict[str, Any]]:
         status.append({
             "name": rule.name,
             "title": rule.title,
+            "kind": rule.kind,
+            "label": rule.label,
             "condition": rule.condition,
             "cooldown_minutes": round(rule.cooldown_seconds / 60),
             "applies": applies,
