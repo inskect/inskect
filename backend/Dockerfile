@@ -1,5 +1,5 @@
 # Base images by digest: a tag can be moved to other contents. Update the digest with the tag.
-FROM python:3.13-slim@sha256:3dd7cc108ec1493442514f5c2a871af6af0ec31d768ff6e378a93340c3b3db5f AS base
+FROM python:3.15-slim@sha256:65a65fc7b30b06cb6df4930fd4650697cb23f4c2698ab81fc87e4b031bc36928 AS base
 
 # git: uv fetches skillspector from GitHub, and skillspector clones Git scan targets.
 # Every locked dependency ships prebuilt wheels, so no compiler toolchain is needed.
